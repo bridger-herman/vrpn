@@ -1121,6 +1121,7 @@ set(VRPN_SERVER_SOURCES
 	vrpn_raw_sgibox.C
 	vrpn_Retrolink.C
 	vrpn_Saitek_Controller_Raw.C
+    vrpn_Sensel_Morph.C
 	vrpn_sgibox.C
 	vrpn_Spaceball.C
 	vrpn_Streaming_Arduino.C
@@ -1235,6 +1236,7 @@ set(VRPN_SERVER_PUBLIC_HEADERS
 	vrpn_raw_sgibox.h
 	vrpn_Retrolink.h
 	vrpn_Saitek_Controller_Raw.h
+    vrpn_Sensel_Morph.h
 	vrpn_sgibox.h
 	vrpn_Spaceball.h
 	vrpn_Streaming_Arduino.h

@@ -65,6 +65,7 @@
 #include "vrpn_Poser_Analog.h"          // for vrpn_Poser_AnalogParam, etc
 #include "vrpn_Poser.h"                 // for vrpn_Poser
 #include "vrpn_Poser_Tek4662.h"         // for vrpn_Poser_Tek4662
+#include "vrpn_Sensel_Morph.h"          // for vrpn_Sensel_Morph (touch-sensitive pad)
 #include "vrpn_raw_sgibox.h"            // for vrpn_raw_SGIBox, for access to the SGI button & dial box connected to the serial port of an linux PC
 #include "vrpn_Retrolink.h"             // for vrpn_Retrolink_GameCube, etc.
 #include "vrpn_Saitek_Controller_Raw.h" // for vrpn_Saitek_ST290_Pro, etc.
@@ -5163,6 +5164,28 @@ int vrpn_Generic_Server_Object::setup_Vality_vGlass(char *&pch, char *line, FILE
     return 0; // successful completion
 }
 
+int vrpn_Generic_Server_Object::setup_Sensel_Morph(char *&pch, char *line, FILE *)
+{
+    char s2[LINESIZE];
+
+    VRPN_CONFIG_NEXT();
+    int ret = sscanf(pch, "%511s", s2);
+    if (ret != 1) {
+        fprintf(stderr, "Bad Sensel_Morph line: %s\n", line);
+        return -1;
+    }
+
+    // Open the Sensel Morph
+    if (verbose) {
+        printf("Opening Sensel_Morph\n");
+    }
+
+    // Open the tracker
+    _devices->add(new vrpn_Sensel_Morph(s2, connection, NULL));
+
+    return 0; // successful completion
+}
+
 #undef VRPN_CONFIG_NEXT
 
 vrpn_Generic_Server_Object::vrpn_Generic_Server_Object(
@@ -5765,6 +5788,9 @@ vrpn_Generic_Server_Object::vrpn_Generic_Server_Object(
                 }
                 else if (VRPN_ISIT("vrpn_Vality_vGlass")) {
                   VRPN_CHECK(setup_Vality_vGlass);
+                }
+                else if (VRPN_ISIT("vrpn_Sensel_Morph")) {
+                  VRPN_CHECK(setup_Sensel_Morph);
                 }
                 else {                         // Never heard of it
                     sscanf(line, "%511s", s1); // Find out the class name
