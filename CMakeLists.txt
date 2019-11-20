@@ -164,6 +164,10 @@ if(NOT SUBPROJECT)
 	option(VRPN_BUILD_CLIENTS "Build VRPN client apps and tests" ON)
 	option(VRPN_BUILD_SERVERS "Build VRPN servers" ON)
 
+    # Try to include/link sensel morph library?
+    option(VRPN_LINK_SENSEL "Include and link Sensel Morph Library" OFF)
+
+
 	# Development tools
 	if(MSVC_IDE AND MSVC_VERSION LESS 1600)
 		# VS 2012 Express and newer has folder support...
@@ -211,6 +215,16 @@ include_directories(${VRPN_SOURCE_DIR}
 ###
 add_subdirectory(quat)
 list(APPEND EXTRA_LIBS quat)
+
+###
+# Sensel lib
+# lsensel (or sensel.dll) MUST be installed first! Install instructions at
+# `vrpn/sensel-api/sensel-install`
+###
+if (VRPN_LINK_SENSEL) 
+    message("Linking lsensel")
+    list(APPEND EXTRA_LIBS sensel)
+endif()
 
 ###
 # Threading (not on win32)
@@ -1281,6 +1295,13 @@ set(VRPN_SERVER_PUBLIC_HEADERS
 	vrpn_YEI_3Space.h
 	vrpn_Zaber.h
 	server_src/vrpn_Generic_server_object.h)
+
+if (VRPN_LINK_SENSEL)
+set(VRPN_SERVER_PUBLIC_HEADERS
+    ${VRPN_SERVER_PUBLIC_HEADERS}
+    sensel-api/sensel-lib/src/sensel.h # for sensel morph
+    sensel-api/sensel-lib/src/sensel_device.h) # for sensel morph
+endif()
 
 set(VRPN_SERVER_LIBRARY)
 set(VRPN_CLIENT_LIBRARY)

@@ -14,26 +14,43 @@
 #define VRPN_TIMESTAMP_MEMBER m_timestamp // Configuration required for vrpn_MessageMacros in this class.
 #include "vrpn_MessageMacros.h"         // for VRPN_MSG_INFO, VRPN_MSG_WARNING, VRPN_MSG_ERROR
 
+// Sensel headers
+#include "sensel.h"
+#include "sensel_device.h"
+
 #undef VERBOSE
 
-#define MAX_TCHANNELS 8	
-
-// Defines the modes in which the box can find itself.
-#define	STATUS_RESETTING	(-1)	// Resetting the box
-#define	STATUS_SYNCING		(0)	// Looking for the first character of report
-#define	STATUS_READING		(1)	// Looking for the rest of the report
-#define MAX_TIME_INTERVAL  (2000000) // max time between reports (usec)
-
-
 vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL,
-                 const char *tracker_cfg_file_name = NULL) :
+        const char *tracker_cfg_file_name = NULL) :
     vrpn_Tracker(name, c, tracker_cfg_file_name)
 {
     std::cout << "Initializing Sensel Morph" << std::endl;
+    //Get a list of avaialble Sensel devices
+    senselGetDeviceList(&m_list);
+    if (m_list.num_devices == 0)
+    {
+        fprintf(stdout, "No device found\n");
+        fprintf(stdout, "Press Enter to exit example\n");
+        getchar();
+    }
+
+    //Open a Sensel device by the id in the SenselDeviceList, handle initialized 
+    senselOpenDeviceByID(&m_handle, m_list.devices[0].idx);
+
+    //Get the sensor info
+    senselGetSensorInfo(m_handle, &m_sensor_info);
+
+    //Set the frame content to scan force data
+    senselSetFrameContent(m_handle, FRAME_CONTENT_PRESSURE_MASK);
+
+    //Allocate a frame of data, must be done before reading frame data
+    senselAllocateFrameData(m_handle, &m_frame);
+
+    //Start scanning the Sensel device
+    senselStartScanning(m_handle);
 }
 
-// void vrpn_Sensel_Morph::get_report() {
-
+// int vrpn_Sensel_Morph::get_report() {
 // }
 
 // void vrpn_Sensel_Morph::report_changes() {
@@ -51,7 +68,23 @@ void vrpn_Sensel_Morph::mainloop(void)
 {
     server_mainloop();
 
-    // std::cout << "Sensel morph mainloop()" << std::endl;
-
+    float total_force = 0.0f;
+    unsigned int num_frames = 0;
+    //Read all available data from the Sensel device
+    senselReadSensor(m_handle);
+    //Get number of frames available in the data read from the sensor
+    senselGetNumAvailableFrames(m_handle, &num_frames);
+    for (int f = 0; f < num_frames; f++)
+    {
+        //Read one frame of data
+        senselGetFrame(m_handle, m_frame);
+        //Calculate the total force
+        total_force = 0;
+        for (int i = 0; i < m_sensor_info.num_cols*m_sensor_info.num_rows; i++)
+        {
+            total_force = total_force + m_frame->force_array[i];
+        }
+        fprintf(stdout, "Total Force : %f\n", total_force);
+    }
     return;
 }
