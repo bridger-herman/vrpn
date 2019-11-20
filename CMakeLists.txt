@@ -165,7 +165,7 @@ if(NOT SUBPROJECT)
 	option(VRPN_BUILD_SERVERS "Build VRPN servers" ON)
 
     # Try to include/link sensel morph library?
-    option(VRPN_LINK_SENSEL "Include and link Sensel Morph Library" OFF)
+    option(VRPN_USE_SENSEL "Include and link Sensel Morph Library" OFF)
 
 
 	# Development tools
@@ -195,7 +195,8 @@ include_directories("${PROJECT_BINARY_DIR}")
 # Include directory needed by all of the files
 include_directories(${VRPN_SOURCE_DIR}
 	${VRPN_SOURCE_DIR}/atmellib
-	${VRPN_SOURCE_DIR}/quat)
+	${VRPN_SOURCE_DIR}/quat
+	${VRPN_SOURCE_DIR}/sensel-api/sensel-lib/src)
 
 
 #-----------------------------------------------------------------------------
@@ -215,16 +216,6 @@ include_directories(${VRPN_SOURCE_DIR}
 ###
 add_subdirectory(quat)
 list(APPEND EXTRA_LIBS quat)
-
-###
-# Sensel lib
-# lsensel (or sensel.dll) MUST be installed first! Install instructions at
-# `vrpn/sensel-api/sensel-install`
-###
-if (VRPN_LINK_SENSEL) 
-    message("Linking lsensel")
-    list(APPEND EXTRA_LIBS sensel)
-endif()
 
 ###
 # Threading (not on win32)
@@ -474,6 +465,21 @@ else()
 			"VRPN_USE_HID disabled: HIDAPI will only be built if you enable HID support for VRPN")
 	endif()
 	set(HIDAPI_SOURCES)
+endif()
+
+###
+# Sensel lib
+# lsensel (or sensel.dll) MUST be installed first! Install instructions at
+# `vrpn/sensel-api/sensel-install`
+###
+if (VRPN_USE_SENSEL)
+	include_directories(${VRPN_SOURCE_DIR}/sensel-api/sensel-lib/src)
+	if (WIN32)
+		link_directories(${VRPN_SOURCE_DIR}/sensel-api/sensel-install)
+		list(APPEND SERVER_EXTRA_LIBS LibSensel) # Copy this from your installed version to sensel-install
+	else()
+		list(APPEND EXTRA_LIBS sensel)
+	endif()
 endif()
 
 ###
@@ -1294,14 +1300,10 @@ set(VRPN_SERVER_PUBLIC_HEADERS
 	vrpn_Vality.h
 	vrpn_YEI_3Space.h
 	vrpn_Zaber.h
-	server_src/vrpn_Generic_server_object.h)
-
-if (VRPN_LINK_SENSEL)
-set(VRPN_SERVER_PUBLIC_HEADERS
-    ${VRPN_SERVER_PUBLIC_HEADERS}
-    sensel-api/sensel-lib/src/sensel.h # for sensel morph
+	server_src/vrpn_Generic_server_object.h
+	sensel-api/sensel-lib/src/sensel.h # for sensel morph
     sensel-api/sensel-lib/src/sensel_device.h) # for sensel morph
-endif()
+
 
 set(VRPN_SERVER_LIBRARY)
 set(VRPN_CLIENT_LIBRARY)
@@ -1419,6 +1421,7 @@ set(VRPN_INCLUDE_DIRS
 	"${VRPN_SOURCE_DIR}"
 	"${VRPN_SOURCE_DIR}/atmellib"
 	"${VRPN_SOURCE_DIR}/quat"
+	"${VRPN_SOURCE_DIR}/sensel-api/sensel-lib/src"
 	CACHE INTERNAL "" FORCE)
 
 #-----------------------------------------------------------------------------

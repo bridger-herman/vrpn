@@ -5,14 +5,15 @@
 //
 // License: Standard VRPN.
 
-#include <math.h>                       // for floor
 #include <iostream>
+#include <math.h> // for floor
 #include <sstream>
 
 #include "vrpn_Sensel_Morph.h"
 
-#define VRPN_TIMESTAMP_MEMBER m_timestamp // Configuration required for vrpn_MessageMacros in this class.
-#include "vrpn_MessageMacros.h"         // for VRPN_MSG_INFO, VRPN_MSG_WARNING, VRPN_MSG_ERROR
+#define VRPN_TIMESTAMP_MEMBER                                                  \
+    m_timestamp // Configuration required for vrpn_MessageMacros in this class.
+#include "vrpn_MessageMacros.h" // for VRPN_MSG_INFO, VRPN_MSG_WARNING, VRPN_MSG_ERROR
 
 // Sensel headers
 #include "sensel.h"
@@ -23,8 +24,9 @@
 const int NUM_SENSEL_CHANNELS = 3;
 const float TOUCH_CUTOFF = 0.0;
 
-vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL) :
-    vrpn_Analog(name, c)
+vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name,
+                                     vrpn_Connection *c = NULL)
+    : vrpn_Analog(name, c)
 {
     std::cout << "Initializing Sensel Morph" << std::endl;
 
@@ -32,28 +34,28 @@ vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL
     // 3 channels (x, y, pressure)
     vrpn_Analog::num_channel = NUM_SENSEL_CHANNELS;
 
-    //Get a list of avaialble Sensel devices
+    // Get a list of avaialble Sensel devices
     senselGetDeviceList(&m_list);
-    if (m_list.num_devices == 0)
-    {
+    if (m_list.num_devices == 0) {
         fprintf(stdout, "No device found\n");
         fprintf(stdout, "Press Enter to exit example\n");
         getchar();
     }
 
-    //Open a Sensel device by the id in the SenselDeviceList, handle initialized 
+    // Open a Sensel device by the id in the SenselDeviceList, handle
+    // initialized
     senselOpenDeviceByID(&m_handle, m_list.devices[0].idx);
 
-    //Get the sensor info
+    // Get the sensor info
     senselGetSensorInfo(m_handle, &m_sensor_info);
 
-    //Set the frame content to scan force data
+    // Set the frame content to scan force data
     senselSetFrameContent(m_handle, FRAME_CONTENT_PRESSURE_MASK);
 
-    //Allocate a frame of data, must be done before reading frame data
+    // Allocate a frame of data, must be done before reading frame data
     senselAllocateFrameData(m_handle, &m_frame);
 
-    //Start scanning the Sensel device
+    // Start scanning the Sensel device
     senselStartScanning(m_handle);
 
     vrpn_gettimeofday(&m_timestamp, NULL);
@@ -62,7 +64,8 @@ vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL
     m_row_per_mm = m_sensor_info.num_rows / m_sensor_info.height;
 }
 
-vrpn_Sensel_Morph::~vrpn_Sensel_Morph() {
+vrpn_Sensel_Morph::~vrpn_Sensel_Morph()
+{
     // TODO: Doesn't actually close sensel when Ctrl-C is pressed
     senselClose(m_handle);
 }
@@ -93,7 +96,6 @@ void vrpn_Sensel_Morph::mainloop(void)
         vrpn_Analog::channel[i] = 0.0f;
     }
 
-    float total_force, sum_x, sum_y = 0.0f;
     unsigned int num_frames, num_coords = 0;
 
     // Read all available data from the Sensel device
@@ -101,8 +103,11 @@ void vrpn_Sensel_Morph::mainloop(void)
 
     // Get number of frames available in the data read from the sensor
     senselGetNumAvailableFrames(m_handle, &num_frames);
-    for (int f = 0; f < num_frames; f++)
-    {
+    for (int f = 0; f < num_frames; f++) {
+        float total_force = 0.0f;
+        float sum_x = 0.0f;
+        float sum_y = 0.0f;
+
         // Read one frame of data
         senselGetFrame(m_handle, m_frame);
 
@@ -110,8 +115,8 @@ void vrpn_Sensel_Morph::mainloop(void)
         // Calculate the average position of the force
         total_force = 0.0;
         num_coords = 0;
-        for (int i = 0; i < m_sensor_info.num_cols*m_sensor_info.num_rows; i++)
-        {
+        for (int i = 0; i < m_sensor_info.num_cols * m_sensor_info.num_rows;
+             i++) {
             int x = i % m_sensor_info.num_cols;
             int y = i / m_sensor_info.num_cols;
 
@@ -119,8 +124,8 @@ void vrpn_Sensel_Morph::mainloop(void)
 
             if (m_frame->force_array[i] > TOUCH_CUTOFF) {
                 num_coords++;
-                sum_x += (float) x / m_col_per_mm;
-                sum_y += (float) y / m_row_per_mm;
+                sum_x += (float)x / m_col_per_mm;
+                sum_y += (float)y / m_row_per_mm;
             }
         }
         if (num_coords > 0) {
@@ -128,8 +133,6 @@ void vrpn_Sensel_Morph::mainloop(void)
             channel[1] = sum_y / num_coords;
         }
         channel[2] = total_force;
-
-
     }
 
     vrpn_Analog::report_changes();
