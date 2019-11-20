@@ -20,11 +20,17 @@
 
 #undef VERBOSE
 
-vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL,
-        const char *tracker_cfg_file_name = NULL) :
-    vrpn_Tracker(name, c, tracker_cfg_file_name)
+const int NUM_SENSEL_CHANNELS = 3;
+
+vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL) :
+    vrpn_Analog(name, c)
 {
     std::cout << "Initializing Sensel Morph" << std::endl;
+
+    // Set the parameters in the parent classes
+    // 3 channels (x, y, pressure)
+    vrpn_Analog::num_channel = NUM_SENSEL_CHANNELS;
+
     //Get a list of avaialble Sensel devices
     senselGetDeviceList(&m_list);
     if (m_list.num_devices == 0)
@@ -48,18 +54,27 @@ vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL
 
     //Start scanning the Sensel device
     senselStartScanning(m_handle);
+
+    vrpn_gettimeofday(&m_timestamp, NULL);
 }
 
-// int vrpn_Sensel_Morph::get_report() {
-// }
+vrpn_Sensel_Morph::~vrpn_Sensel_Morph() {
+    senselClose(m_handle);
+}
 
-// void vrpn_Sensel_Morph::report_changes() {
+void vrpn_Sensel_Morph::report_changes(vrpn_uint32 class_of_service)
+{
+    vrpn_Analog::timestamp = m_timestamp;
 
-// }
+    vrpn_Analog::report_changes(class_of_service);
+}
 
-// void vrpn_Sensel_Morph::report() {
+void vrpn_Sensel_Morph::report(vrpn_uint32 class_of_service)
+{
+    vrpn_Analog::timestamp = m_timestamp;
 
-// }
+    vrpn_Analog::report(class_of_service);
+}
 
 // This routine is called each time through the server's main loop. It will
 // take a course of action depending on the current status of the Sensel Morph,
@@ -67,6 +82,13 @@ vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name, vrpn_Connection *c = NULL
 void vrpn_Sensel_Morph::mainloop(void)
 {
     server_mainloop();
+
+    vrpn_gettimeofday(&m_timestamp, NULL);
+
+    for (int i = 0; i < NUM_SENSEL_CHANNELS; i++) {
+        vrpn_Analog::last[i] = vrpn_Analog::channel[i];
+        vrpn_Analog::channel[i] = 42.0;
+    }
 
     float total_force = 0.0f;
     unsigned int num_frames = 0;
@@ -84,7 +106,10 @@ void vrpn_Sensel_Morph::mainloop(void)
         {
             total_force = total_force + m_frame->force_array[i];
         }
-        fprintf(stdout, "Total Force : %f\n", total_force);
+        channel[2] = total_force;
+        // fprintf(stdout, "Total Force : %f\n", total_force);
     }
+
+    vrpn_Analog::report_changes();
     return;
 }

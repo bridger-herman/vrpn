@@ -5181,7 +5181,7 @@ int vrpn_Generic_Server_Object::setup_Sensel_Morph(char *&pch, char *line, FILE 
     }
 
     // Open the tracker
-    _devices->add(new vrpn_Sensel_Morph(s2, connection, NULL));
+    _devices->add(new vrpn_Sensel_Morph(s2, connection));
 
     return 0; // successful completion
 }

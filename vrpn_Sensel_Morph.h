@@ -10,20 +10,19 @@
 // `vrpn/sensel-api/sensel-examples/sensel-c`
 
 #pragma once
-#include "vrpn_Tracker.h"               // for vrph_Tracker
+#include "vrpn_Analog.h"               // for vrpn_Analog
 #include <string>
 
 // Sensel headers
 #include "sensel.h"
 #include "sensel_device.h"
 
-class VRPN_API vrpn_Sensel_Morph: public vrpn_Tracker
+class VRPN_API vrpn_Sensel_Morph: public vrpn_Analog
 {
     public:
-        vrpn_Sensel_Morph(const char *name, vrpn_Connection *c,
-                const char *tracker_cfg_file_name);
+        vrpn_Sensel_Morph(const char *name, vrpn_Connection *c);
 
-        ~vrpn_Sensel_Morph()  {};
+        ~vrpn_Sensel_Morph();
 
         // Called once through each main loop iteration to handle
         // updates.
@@ -50,10 +49,10 @@ class VRPN_API vrpn_Sensel_Morph: public vrpn_Tracker
 
         // virtual int get_report(void);	// Try to read a report from the device
 
-        // // send report iff changed
-        // virtual void report_changes (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
-        // // send report whether or not changed
-        // virtual void report (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
+        // send report iff changed
+        virtual void report_changes (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
+        // send report whether or not changed
+        virtual void report (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
 
         // NOTE:  class_of_service is only applied to vrpn_Analog
         //  values, not vrpn_Button or vrpn_Dial
