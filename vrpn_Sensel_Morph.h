@@ -44,10 +44,11 @@ class VRPN_API vrpn_Sensel_Morph: public vrpn_Analog
         //SenselFrame data that will hold the forces
         SenselFrameData *m_frame = NULL;
 
-        std::string m_buffer; // Characters read from the device.
-        struct timeval m_timestamp;	// Time of the last report from the device
+        // Rows and columns per physical millimeter on the device
+        float m_col_per_mm;
+        float m_row_per_mm;
 
-        // virtual int get_report(void);	// Try to read a report from the device
+        struct timeval m_timestamp;	// Time of the last report from the device
 
         // send report iff changed
         virtual void report_changes (vrpn_uint32 class_of_service = vrpn_CONNECTION_LOW_LATENCY);
@@ -56,9 +57,5 @@ class VRPN_API vrpn_Sensel_Morph: public vrpn_Analog
 
         // NOTE:  class_of_service is only applied to vrpn_Analog
         //  values, not vrpn_Button or vrpn_Dial
-
-        void clear_values();
-        int reset();
-
     private:
 };
