@@ -475,7 +475,13 @@ endif()
 if (VRPN_USE_SENSEL)
 	include_directories(${VRPN_SOURCE_DIR}/sensel-api/sensel-lib/src)
 	if (WIN32)
-		link_directories(${VRPN_SOURCE_DIR}/sensel-api/sensel-install)
+		#link_directories(${VRPN_SOURCE_DIR}/sensel-api/sensel-install)
+		set(SENSEL_LIB_DIR
+			"C:/Program Files/Sensel/SenselLib/x64/"
+			CACHE
+			PATH
+			"Install location of LibSensel.lib (created when you run sensel-api/sensel-install/SenselLibWin0.8.3.exe)")
+		link_directories(${SENSEL_LIB_DIR})
 		list(APPEND SERVER_EXTRA_LIBS LibSensel) # Copy this from your installed version to sensel-install
 	else()
 		list(APPEND EXTRA_LIBS sensel)
