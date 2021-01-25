@@ -5167,10 +5167,11 @@ int vrpn_Generic_Server_Object::setup_Vality_vGlass(char *&pch, char *line, FILE
 int vrpn_Generic_Server_Object::setup_Sensel_Morph(char *&pch, char *line, FILE *)
 {
     char s2[LINESIZE];
+    int f1;
 
     VRPN_CONFIG_NEXT();
-    int ret = sscanf(pch, "%511s", s2);
-    if (ret != 1) {
+    int ret = sscanf(pch, "%511s%d", s2, &f1);
+    if (ret != 2) {
         fprintf(stderr, "Bad Sensel_Morph line: %s\n", line);
         return -1;
     }
@@ -5181,7 +5182,9 @@ int vrpn_Generic_Server_Object::setup_Sensel_Morph(char *&pch, char *line, FILE 
     }
 
     // Open the tracker
-    _devices->add(new vrpn_Sensel_Morph(s2, connection));
+
+    _devices->add(new vrpn_Sensel_Morph(s2, f1, connection));
+
 
     return 0; // successful completion
 }

@@ -20,7 +20,7 @@
 class VRPN_API vrpn_Sensel_Morph: public vrpn_Analog
 {
     public:
-        vrpn_Sensel_Morph(const char *name, vrpn_Connection *c);
+        vrpn_Sensel_Morph(const char *name, int max_num_contacts, vrpn_Connection *c);
 
         ~vrpn_Sensel_Morph();
 
@@ -43,6 +43,9 @@ class VRPN_API vrpn_Sensel_Morph: public vrpn_Analog
 
         //SenselFrame data that will hold the forces
         SenselFrameData *m_frame = NULL;
+
+        // Maximum number of contacts to send to VRPN Analog
+        int m_max_num_contacts;
 
         // Rows and columns per physical millimeter on the device
         float m_col_per_mm;

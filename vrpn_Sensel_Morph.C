@@ -21,25 +21,27 @@
 
 #undef VERBOSE
 
-const int NUM_SENSEL_CHANNELS = 3;
+const int CHANNELS_PER_CONTACT = 3;
 const float TOUCH_CUTOFF = 0.0;
 
 vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name,
+                                    int max_num_contacts,
                                      vrpn_Connection *c = NULL)
     : vrpn_Analog(name, c)
 {
     std::cout << "Initializing Sensel Morph" << std::endl;
 
     // Set the parameters in the parent classes
-    // 3 channels (x, y, pressure)
-    vrpn_Analog::num_channel = NUM_SENSEL_CHANNELS;
+    // 15 channels (x, y, pressure) for 5 fingers
+    m_max_num_contacts = max_num_contacts;
+    vrpn_Analog::num_channel = max_num_contacts * CHANNELS_PER_CONTACT;
+    fprintf(stdout, "Max num contacts: %d (%d channels)\n", m_max_num_contacts, m_max_num_contacts * CHANNELS_PER_CONTACT);
 
     // Get a list of avaialble Sensel devices
     senselGetDeviceList(&m_list);
     if (m_list.num_devices == 0) {
         fprintf(stdout, "No device found\n");
-        fprintf(stdout, "Press Enter to exit example\n");
-        getchar();
+        return;
     }
 
     // Open a Sensel device by the id in the SenselDeviceList, handle
@@ -50,7 +52,7 @@ vrpn_Sensel_Morph::vrpn_Sensel_Morph(const char *name,
     senselGetSensorInfo(m_handle, &m_sensor_info);
 
     // Set the frame content to scan force data
-    senselSetFrameContent(m_handle, FRAME_CONTENT_PRESSURE_MASK);
+    senselSetFrameContent(m_handle, FRAME_CONTENT_CONTACTS_MASK);
 
     // Allocate a frame of data, must be done before reading frame data
     senselAllocateFrameData(m_handle, &m_frame);
@@ -91,7 +93,7 @@ void vrpn_Sensel_Morph::mainloop(void)
 
     vrpn_gettimeofday(&m_timestamp, NULL);
 
-    for (int i = 0; i < NUM_SENSEL_CHANNELS; i++) {
+    for (int i = 0; i < m_numchannels; i++) {
         vrpn_Analog::last[i] = vrpn_Analog::channel[i];
         vrpn_Analog::channel[i] = 0.0f;
     }
@@ -104,35 +106,23 @@ void vrpn_Sensel_Morph::mainloop(void)
     // Get number of frames available in the data read from the sensor
     senselGetNumAvailableFrames(m_handle, &num_frames);
     for (int f = 0; f < num_frames; f++) {
-        float total_force = 0.0f;
-        float sum_x = 0.0f;
-        float sum_y = 0.0f;
-
         // Read one frame of data
         senselGetFrame(m_handle, m_frame);
-
-        // Calculate the total force
-        // Calculate the average position of the force
-        total_force = 0.0;
-        num_coords = 0;
-        for (int i = 0; i < m_sensor_info.num_cols * m_sensor_info.num_rows;
-             i++) {
-            int x = i % m_sensor_info.num_cols;
-            int y = i / m_sensor_info.num_cols;
-
-            total_force += m_frame->force_array[i];
-
-            if (m_frame->force_array[i] > TOUCH_CUTOFF) {
-                num_coords++;
-                sum_x += (float)x / m_col_per_mm;
-                sum_y += (float)y / m_row_per_mm;
+        // Put contact data in Analog channels array
+        if (m_frame->n_contacts > 0) {
+            int c = 0;
+            for (c = 0; c < m_frame->n_contacts && c < m_max_num_contacts; c++) {
+                channel[c * CHANNELS_PER_CONTACT + 0] = m_frame->contacts[c].x_pos;
+                channel[c * CHANNELS_PER_CONTACT + 1] = m_frame->contacts[c].y_pos;
+                channel[c * CHANNELS_PER_CONTACT + 2] = m_frame->contacts[c].total_force;
+            }
+            // Zero out the rest of the channels
+            for (; c < m_max_num_contacts; c++) {
+                for (int xyf = 0; xyf < CHANNELS_PER_CONTACT; xyf++) {
+                    channel[c * CHANNELS_PER_CONTACT + xyf] = 0.0f;
+                }
             }
         }
-        if (num_coords > 0) {
-            channel[0] = sum_x / num_coords;
-            channel[1] = sum_y / num_coords;
-        }
-        channel[2] = total_force;
     }
 
     vrpn_Analog::report_changes();
