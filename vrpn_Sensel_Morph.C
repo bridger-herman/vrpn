@@ -111,15 +111,19 @@ void vrpn_Sensel_Morph::mainloop(void)
         // Put contact data in Analog channels array
         if (m_frame->n_contacts > 0) {
             int c = 0;
-            for (c = 0; c < m_frame->n_contacts && c < m_max_num_contacts; c++) {
-                channel[c * CHANNELS_PER_CONTACT + 0] = m_frame->contacts[c].x_pos;
-                channel[c * CHANNELS_PER_CONTACT + 1] = m_frame->contacts[c].y_pos;
-                channel[c * CHANNELS_PER_CONTACT + 2] = m_frame->contacts[c].total_force;
-            }
-            // Zero out the rest of the channels
+            // Zero out all of the channels
             for (; c < m_max_num_contacts; c++) {
                 for (int xyf = 0; xyf < CHANNELS_PER_CONTACT; xyf++) {
                     channel[c * CHANNELS_PER_CONTACT + xyf] = 0.0f;
+                }
+            }
+            // Add the channel info by id
+            for (c = 0; c < m_frame->n_contacts && c < m_max_num_contacts; c++) {
+                int id = m_frame->contacts[c].id;
+                if (id < m_max_num_contacts) {
+                    channel[id * CHANNELS_PER_CONTACT + 0] = m_frame->contacts[c].x_pos;
+                    channel[id * CHANNELS_PER_CONTACT + 1] = m_frame->contacts[c].y_pos;
+                    channel[id * CHANNELS_PER_CONTACT + 2] = m_frame->contacts[c].total_force;
                 }
             }
         }
